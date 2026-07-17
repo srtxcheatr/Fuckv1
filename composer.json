@@ -1,6 +1,12 @@
 {
     "require": {
+        "php": "^8.3",
         "kreait/firebase-php": "^7.0",
         "google/cloud-firestore": "^2.0"
+    },
+    "config": {
+        "allow-plugins": {
+            "google/cloud-firestore": true
+        }
     }
 }
