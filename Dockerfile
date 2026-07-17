@@ -5,7 +5,7 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 FROM php:8.3-apache
 
-# Install gRPC and protobuf extensions (required by Firestore)
+# १. Firestore को लागि आवश्यक पर्ने gRPC र Protobuf इन्स्टल गर्ने
 RUN apt-get update && apt-get install -y --no-install-recommends \
         autoconf \
         build-essential \
@@ -18,26 +18,28 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && apt-get purge -y --auto-remove autoconf build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Enable Apache mod_rewrite and headers, allow .htaccess overrides
+# २. Apache rewrite/headers इनेबल गर्ने र .htaccess Override अलाउ गर्ने
 RUN a2enmod rewrite headers && \
     { \
       echo '<Directory /var/www/html>'; \
       echo '    AllowOverride All'; \
+      echo '    Require all granted'; \
       echo '</Directory>'; \
     } > /etc/apache2/conf-available/z-allowoverride.conf && \
     a2enconf z-allowoverride
 
-# Copy application source (including composer.json)
+# ३. सोर्स कोड र पहिले नै बिल्ड भएको Vendor कपि गर्ने
 COPY . /var/www/html/
-
-# Copy pre-built vendor from composer stage (overwrites any existing vendor)
 COPY --from=vendor /app/vendor /var/www/html/vendor
 
-# Install Composer and regenerate the autoloader
+# ४. Composer राख्ने र Autoloader लाई अप्टिमाइज गर्ने
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 RUN composer dump-autoload --optimize --no-interaction
 
-# Optionally remove composer.json to keep the image clean
+# ५. Render मा Permission को समस्या आउन नदिन फाइल ओनरसिप मिलाउने
+RUN chown -R www-data:www-data /var/www/html
+
+# ६. सफाइका लागि composer.json हटाउने
 RUN rm -f /var/www/html/composer.json
 
 EXPOSE 80
