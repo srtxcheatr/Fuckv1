@@ -1,0 +1,12 @@
+# Some hosts (and Apache by default) strip the Authorization header
+# before PHP ever sees it. Your endpoints all read the Firebase ID
+# token from that header (see require_firebase_uid() in
+# src/firebase.php) — without this, every request would fail auth
+# with a 401, even with a correct token.
+RewriteEngine On
+RewriteCond %{HTTP:Authorization} .
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+<IfModule mod_headers.c>
+    SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+</IfModule>
